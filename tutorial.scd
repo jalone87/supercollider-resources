@@ -186,7 +186,24 @@ x = {
 // *** ENV-GEN ***
 // ***************
 
+// As opposite to Line and XLine EnvGen has a `gate` parameter that can trigger teh envelope and also repeat it.
 
+// first create an Evnvelope. We can visualize the default create with `new` with `plot` method.
+Env.new.plot;
+// note the times must be levels.count-1, as it's the time between each level.
+Env.new(levels: [0,1,0], times: [1,2], curve:'sine').plot;
+
+(
+{
+	var sig, env;
+	// env = EnvGen.kr(Env.new, doneAction: 2);
+	// env = EnvGen.kr(Env.new([0,1,0], [1,1], 'lin'), doneAction: 2);
+	env = EnvGen.kr(Env.new([0,1,0], [1,3], \sine), doneAction: 2);
+	sig = Pulse.ar(ExpRand(30, 500)) * env;
+}.play;
+)
+
+Env.new([0,1,0.2,1], [0,5,1,2], '')
 
 
 
