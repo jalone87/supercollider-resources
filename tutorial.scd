@@ -343,6 +343,53 @@ SynthDef.new(\multi, {
 x = Synth.new(\multi);
 
 
+// *****************
+// *** ITERATION ***
+// *****************
+
+// "do" iterates over the array and executes the function
+[6, 4, 9.5, 10, 7].do{"hello".postln};
+// do returns the receiver (the array) at the end
+
+// iterate over the items
+(
+[6, 4, 9.5, 10, 7].do{
+	arg item;
+	item.squared.postln;
+};
+)
+
+// enumerated
+(
+[6, 4, 9.5, 10, 7].do{
+	arg item, count;
+	[count, item.squared].postln;
+};
+)
+
+
+// store result
+x = Array.newClear(5);
+(
+[6, 4, 9.5, 10, 7].do{
+	arg item, count;
+	x[count] = item.squared;
+};
+)
+x.postln;
+
+//or better
+(
+z = [6, 4, 9.5, 10, 7].collect{
+	arg item, count;
+	item.squared;
+};
+)
+//or better
+z = [6, 4, 9.5, 10, 7].collect(_.squared);
+
+// we can iterate onver integers as well. they are like ranges
+5.do{"hi".postln;}
 
 //shows currently active Synths
 s.plotTree;
