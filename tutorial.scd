@@ -185,6 +185,7 @@ x = {
 // ***************
 // *** ENV-GEN ***
 // ***************
+// ep 4.
 
 // As opposite to Line and XLine EnvGen has a `gate` parameter that can trigger teh envelope and also repeat it.
 
@@ -203,7 +204,143 @@ Env.new(levels: [0,1,0], times: [1,2], curve:'sine').plot;
 }.play;
 )
 
-Env.new([0,1,0.2,1], [0,5,1,2], '')
+
+// using own curve points
+(
+{
+	var sig, env;
+	env = EnvGen.kr(Env.new(
+		[0, 1, 0.2, 0],
+		[0.5, 1, 2],
+		[3, -3, 0]), // unclear but it seem to work like bizier curves when looking at the plot. with 0 meaning linear
+		doneAction: 2);
+	sig = Pulse.ar(ExpRand(30, 500)) * env;
+}.play;
+)
+
+Env.new( [0, 1, 0.2, 0], [0.5, 1, 2], [-10, -3, 0]).plot;
+
+// using gate to trigger a reset of the envelope
+// the gate triggers when the value goes from non-positive to positive (0 and 1 is ok)
+(
+x = {
+	// arg gate = 0
+	arg t_gate = 0; // we can use t_gate to automatically reset gate to 0 so we can just set it to 1
+	var sig, env;
+	env = EnvGen.kr(Env.new(
+		[0, 1, 0.2, 0],
+		[0.5, 1, 2],
+		[3, -3, 0]), t_gate);
+	sig = Pulse.ar(LFPulse.kr(8).range(80, 90)) * env;
+}.play;
+)
+
+x.set(\t_gate, 1); // as long as there is no doneAction and the envelope is not complete we can retrigger it as much as wanted
+
+
+// ADSR Envelope
+// adsr have sustain, which means that the envelope remains on the sustain value until the gate does trigger
+(
+x = {
+	arg gate = 0;
+	var sig, env;
+	env = EnvGen.kr(Env.adsr, gate);
+	sig = VarSaw.ar(SinOsc.kr(16).range(500, 1000)) * env;
+}.play;
+)
+
+x.set(\gate, 1); // oth 1 the envelope wil start and sustain (and no sense using t_)
+x.set(\gate, 0); // on zero it will gradually stop
+
+// note Env.dadsr which is the same but with an initial delay variant
+
+//2 different envelopes sharing the same gate
+(
+x = {
+	arg gate = 0;
+	var sig, env, freq;
+	freq = EnvGen.kr(Env.adsr(1), gate, 200, 0.1);
+	env = EnvGen.kr(Env.adsr, gate, doneAction: 2);
+	sig = VarSaw.ar(SinOsc.kr(freq).range(30, 400)) * env;
+}.play;
+) // they will end together
+
+x.set(\gate, 1);
+x.set(\gate, 0);
+
+
+
+
+// *********************
+// *** MULTI-CHANNEL ***
+// *********************
+// ep 5.
+// search docs for "Multichannel Expansion"
+
+s.meter; // shows the audio levels for current channels
+
+// following are the same. the array is expanded to the first available channels (0 and 1)
+x = { [ SinOsc.ar(300), SinOsc.ar(500) ] }.play;
+x = { SinOsc.ar([300, 500]) }.play;
+
+(
+x = {
+	var sig, amp;
+	amp = SinOsc.kr(7).range(0,1);
+	// the prevoious osc only has one channel, when multiplied with the sig oscillator, which has 2,
+	// the osc with less channels will apply the single one to all the others channel. same as below
+	// amp = SinOsc.kr([7, 7]).range(0,1);
+	sig = SinOsc.ar([300, 500]);
+	sig = sig * amp;
+}.play;
+)
+
+// Mixing
+
+(
+x = {
+	var sig, amp;
+	// given an arbitrary amount of channel. they useless if we only have 2 speakers
+	amp = SinOsc.kr([7, 1, 2, 0.2, 6]).range(0,1);
+	sig = SinOsc.ar([300, 500, 700, 900, 1100]);
+	sig = sig * amp;
+	//   we create a mixxer that sums them all to a single channel
+	// Mix.new(sig) * 0.25; // 0.25 reduces clipping
+	//   to bring back to 2 channels
+	// [Mix.new(sig), Mix.new(sig)] * 0.25;
+	//   or shortly
+	// Mix.new(sig).dup(2) * 0.25;
+	//   or even shorter
+	// Mix.new(sig)!2 * 0.25 ;
+	//   if we want to distribute the N channels *differently* to the 2 stereo ones we can use
+	Splay.ar(sig) * 0.25;
+}.play;
+)
+
+// note differences
+x = {PinkNoise.ar(0.5)!2}.play; // same outputs both channels
+x = {PinkNoise.ar(0.5!2)}.play; // different outputs for channels
+
+x = rrand(50, 1000)!4; // same number filling an array of size 4
+x = {rrand(50, 1000)}!4; // in a function, the nnumber is always different. like a callback.
+
+// exprand and rrand will still be evaluated at compile time. outcome is always the same.
+// to better use in a signal, use the Ugen
+ExpRand(0.2, 12)!8; // see https://www.youtube.com/watch?v=fAXETAyrv8s min11.30 for more info
+
+// beware that in SynthDef the Out already performs expansion.
+(
+SynthDef.new(\multi, {
+	var sig, amp;
+	amp = SinOsc.kr([7, 1, 2, 0.2, 6]).range(0,1);
+	sig = SinOsc.ar([300, 500, 700, 900, 1100]);
+	sig = sig * amp;
+	sig = Splay.ar(sig) * 0.25;
+	// So if it it finds a multichannel signal, you only need to use the initial channel (0)
+	Out.ar(0, sig);
+}).add;
+)
+x = Synth.new(\multi);
 
 
 
