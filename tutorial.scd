@@ -2,11 +2,6 @@
 // *** https://www.youtube.com/watch?v=yRzsOOiJ_p4&list=PLPYzvS8A_rTaNDweXe6PX4CXSGq4iEWYC
 
 
-// starts the server // shorthand for Server.local.boot. The local server is stored in the s variable
-s.boot;
-
-
-
 // **************
 // *** SYNTAX ***
 // **************
@@ -322,7 +317,7 @@ x = {PinkNoise.ar(0.5)!2}.play; // same outputs both channels
 x = {PinkNoise.ar(0.5!2)}.play; // different outputs for channels
 
 x = rrand(50, 1000)!4; // same number filling an array of size 4
-x = {rrand(50, 1000)}!4; // in a function, the nnumber is always different. like a callback.
+x = {rrand(50, 1000)}!4; // in a function, the number is always different. like a callback.
 
 // exprand and rrand will still be evaluated at compile time. outcome is always the same.
 // to better use in a signal, use the Ugen
@@ -346,6 +341,7 @@ x = Synth.new(\multi);
 // *****************
 // *** ITERATION ***
 // *****************
+// ep.6
 
 // "do" iterates over the array and executes the function
 [6, 4, 9.5, 10, 7].do{"hello".postln};
@@ -391,8 +387,146 @@ z = [6, 4, 9.5, 10, 7].collect(_.squared);
 // we can iterate onver integers as well. they are like ranges
 5.do{"hi".postln;}
 
+
+// lets apply to a signal
+x = {VarSaw.ar(40!2, 0, 0.05)}.play;
+
+(
+SynthDef.new(\iter, {
+	var temp, sum;
+	sum = 0;
+	10.do{
+		temp = VarSaw.ar(
+			40 * {Rand(0.99, 1.02)}!2, // randomize freq a bit, apply double channel
+			0, //no phase
+			0.05 // width?
+		);
+		sum = sum + temp;
+	};
+	sum = sum * 0.05; // summin 10 signal, scal down to avoid clipping
+	Out.ar(0, sum);
+}).add;
+)
+
+// nice. but the sound is popping at the start
+x = Synth.new(\iter);
+
+(
+SynthDef.new(\iter2, {
+	arg freq = 40; //add freq param
+	var temp, sum, env;
+	sum = 0;
+	env = EnvGen.kr( // add an envelope so we can use it's done action to automatically free the synths
+		Env.perc(0.01, 5, 1, -2),
+		doneAction: 2
+	);
+	10.do{
+		temp = VarSaw.ar(
+			freq * {Rand(0.99, 1.02)}!2,
+			{Rand(0.0, 1.0)}!2, // randomize the phase to diminuish popping
+			{ExpRand(0.005, 0.05)}!2 // makes the sound more aggressive?
+		);
+		sum = sum + temp;
+	};
+	sum = sum * 0.05 * env;
+	Out.ar(0, sum);
+}).add;
+)
+
+// we can now make a chord
+(
+Synth.new(\iter2, [\freq:400]);
+Synth.new(\iter2, [\freq:300]);
+Synth.new(\iter2, [\freq:250]);
+Synth.new(\iter2, [\freq:225]);
+)
+
+// we can use midi numbers instead of frequenncy
+(
+Synth.new(\iter2, [\freq:66.midicps]); // F#
+Synth.new(\iter2, [\freq:73.midicps]); // C#
+Synth.new(\iter2, [\freq:80.midicps]); // G#
+Synth.new(\iter2, [\freq:75.midicps]); // D#
+)
+
+// we can use do for this as well, but is not reccommended since it's not efficient.
+// we risk to loose "sample accuracy"
+(
+[66, 73, 80, 75].do{
+	arg midinote;
+	Synth.new(\iter2, [\freq:midinote.midicps]);
+}
+)
+
+// what we can do is to create a "stack of partials" with a fundamental of 'freq'
+// we integrate the iteration counto INTO the audio mmanipulation
+(
+SynthDef.new(\iter3, {
+	arg freq = 200;
+	var temp, sum;
+	sum = 0;
+	10.do {
+		arg count;
+		temp = SinOsc.ar(freq * (count+1));
+		sum = sum + temp;
+	};
+	sum = sum * 0.05;
+	Out.ar(0, sum);
+}).add;
+)
+x = Synth.new(\iter3);
+// there is already a Uge for this: Blip
+x = { Blip.ar(200, 10, 0.05) }.play;
+
+// we can create a unique sound by changing the frequencies as we want,
+(
+SynthDef.new(\iter4, {
+	arg freq = 200;
+	var temp, sum;
+	sum = 0;
+	10.do {
+		arg count;
+		temp = SinOsc.ar(
+			freq *
+			(count+1) *
+			// for example adding some noise to each frequency, and expading to 2 different channels
+			LFNoise1.kr({Rand(0.05, 0.2)}!2).range(0.98, 1.02.reciprocal)
+		);
+		// we can also add variation to the amplitude
+		temp = temp* LFNoise1.kr({Rand(0.5, 8)}!2).exprange(0.01, 1);
+		sum = sum + temp;
+	};
+	sum = sum * 0.05;
+	Out.ar(0, sum);
+}).add;
+)
+x = Synth.new(\iter4);
+x.set(\freq, 40);
+
+
+// NOTE: arguments are always of Control type (also an UGen)
+// even when passing or definig a default as an integer like
+// `arg num=10;
+// the compiler actually converts it to num = Control(10).
+// this means you cannot iterate over it (in the above example to replace the 10.do{} ),
+// since it is not a collection
+
+
+
+// *************
+// *** UTILS ***
+// *************
+
+// starts the server // shorthand for Server.local.boot. The local server is stored in the s variable
+s.boot;
+
+// shows the audio levels for current channels
+s.meter;
+
 //shows currently active Synths
 s.plotTree;
+
+// deallocating
 
 x.free
 s.freeAll;
