@@ -611,6 +611,50 @@ x = Synth.new(\reverb, [\in, ~reverbBus], ~fxGroup);
 // set on the group will relay the message to all the contained nodes
 ~aGroup.set(\freq, 20); // won't work, just example
 
+
+
+// ***************
+// *** BUFFERS ***
+// ***************
+// ep.8
+
+// used for recorded sounds
+
+// sc file path. see https://stackoverflow.com/a/18938315/691977
+p = thisProcess.nowExecutingPath.dirname;
+// +/+ is an operator. makes sure paths are concatenatedd correctly.
+p = p +/+ "samples/M1F1-int32-AFsp.aif";
+~b0 = Buffer.read(s, p);
+~b0.play;
+
+// buffer attributes
+(
+x = {
+var numFrames, numChannels, samples;
+
+numFrames = ~b0.numFrames;
+numChannels = ~b0.numChannels;
+
+samples = numFrames * numChannels;
+};
+)
+x.value();
+
+~b0.duration;
+~b0.sampleRate;
+
+// bufnums -> unique int id of the buffer. automatically assigned
+~b0.bufnum;
+
+
+~b0.zero; // resets the buffer
+~b0.read(s, audioFilePath); // we can reuse it still
+~b0.free; // deallocates
+// or
+Buffer.freeAll;
+
+
+
 // *************
 // *** UTILS ***
 // *************
@@ -621,6 +665,7 @@ x = Synth.new(\reverb, [\in, ~reverbBus], ~fxGroup);
 s.boot;
 
 s.reboot;
+
 
 // deallocating
 x.free
@@ -639,7 +684,8 @@ s.options.numInputBusChannels; // typically 2 (8 for dolby). so channel 2 and 3 
 // 4 to 1023 are private busses. free to use for utils.
 
 // these values can also be overriden:
-// s.options.numInputBusChannels = 8; // for example if we have an audio interface. must reboot the server after.
+s.options.numInputBusChannels = 8; // for example if we have an audio interface. must reboot the server after.
+
 
 // *** DEBUG *** //
 
