@@ -537,13 +537,15 @@ SynthDef.new(\blip, {
 	// transform soundwave in short blips
 	trig = Dust.kr(2);
 	sig = sig * EnvGen.kr(Env.perc(0.01, 0.2), trig);
+	// expand the signal (pan) to stereo using this intrinsic ugen
+	sig = Pan2.ar(sig, LFNoise1.kr(10));
 	Out.ar(out, sig); // use the bus index
 }).add;
 
 SynthDef(\reverb, {
 	arg in, out = 0; // default to 0 since we want to hear this sound
 	var sig;
-	sig = In.ar(in, 1); // uses inut from a bus `in`. must be 1 channel.only.
+	sig = In.ar(in, 2); // uses inut from a bus `in`. must be stereo (2 channels).
 	sig = FreeVerb.ar(sig, 0.5, 0.8, 0.2)!2; //expand to stereo
 	Out.ar(out, sig);
 }).add;
@@ -561,9 +563,9 @@ y.set(\in, 25);
 // In prev example We don't wannt to hardcode the channels (eg: 6 or 25). We can use the Bus object
 // and we can store it in a global var.
 // s is the server
-// 1 is the amount of channels needed. if more than 1, reverBus will actually store an ARRAY of Bus,
+// 2 is the amount of channels needed. if more than 1, reverBus will actually store an ARRAY of Bus,
 // since one Bus is always 1 per channel.
-~reverbBus = Bus.audio(s, 1);
+~reverbBus = Bus.audio(s, 2);
 ~reverbBus.index; // will give the index of the first free bus
 // the bus will take care of not using the hardware reserved ones nor any already occupied private one)
 x = Synth.new(\reverb, [\in, ~reverbBus.index]);
@@ -573,8 +575,41 @@ x = Synth.new(\reverb, [\in, ~reverbBus]);
 y = Synth.new(\blip, [\out, ~reverbBus]);
 
 
+// ORDER OF EXECUTION
+
+// if ewe swap the order of the synth, no sound is heard!!
+y = Synth.new(\blip, [\out, ~reverbBus]);
+x = Synth.new(\reverb, [\in, ~reverbBus]);
+// the synth are exxecuted in reverse order so the last added is the first in the pipeline
+// in this case the reverb would be first, but has no input from the blip, which is executed right after.
+// see the
+s.plotTree;
 
 
+// GROUPS
+
+// group of synth or groups
+
+// when instantiating a synth, if no TARGET (3rd param) is passed it will be added
+// to the default GROUP (gray square in plotTree)
+Synth.new(\blip, nil, nil).add;
+// passing the seever also will automatically add the synth to the default group
+y = Synth.new(\blip, [\out, ~reverbBus], s);
+// the last param 'addAction' tells where to add the synth in the group. we can chang the default \addToHead with
+x = Synth.new(\reverb, [\in, ~reverbBus], s, \addToTail);
+// now the ordedr we add them does not matter
+// even better we can use \addAfter to add the synth after the passed sound source \reverb
+x = Synth.new(\reverb, [\in, ~reverbBus], s, \addAfter);
+
+
+// we can use groups to group sources and effect so that we guarantee he order
+~sourceGroup = Group.new;
+~fxGroup = Group.after(~sourceGroup);
+y = Synth.new(\blip, [\out, ~reverbBus], ~sourceGroup);
+x = Synth.new(\reverb, [\in, ~reverbBus], ~fxGroup);
+
+// set on the group will relay the message to all the contained nodes
+~aGroup.set(\freq, 20); // won't work, just example
 
 // *************
 // *** UTILS ***
