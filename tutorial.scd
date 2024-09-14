@@ -513,24 +513,106 @@ x.set(\freq, 40);
 
 
 
+
+// ***************************
+// *** Server Architecture ***
+// ***************************
+// ep.7
+
+// Creating an architecture of Oscillator reproducing and processing audio
+
+// Fundamental concepts:
+
+// Nodes -> [Synth, Group]
+// Busses -> they pass signals between synths.
+// Order of Exxecution -> Order of the nodes on the server
+
+(
+SynthDef.new(\blip, {
+	arg out; // bus index. always useful. especially since this wont likely be the final output.
+	var freq, trig, sig;
+	// sound with a freq that jumps randomly between the first 4 partials of the 300Hz fundamental
+	freq = LFNoise1.kr(3).exprange(300, 1200).round(300);
+	sig = SinOsc.ar(freq) * 0.25;
+	// transform soundwave in short blips
+	trig = Dust.kr(2);
+	sig = sig * EnvGen.kr(Env.perc(0.01, 0.2), trig);
+	Out.ar(out, sig); // use the bus index
+}).add;
+
+SynthDef(\reverb, {
+	arg in, out = 0; // default to 0 since we want to hear this sound
+	var sig;
+	sig = In.ar(in, 1); // uses inut from a bus `in`. must be 1 channel.only.
+	sig = FreeVerb.ar(sig, 0.5, 0.8, 0.2)!2; //expand to stereo
+	Out.ar(out, sig);
+}).add;
+)
+
+x = Synth.new(\reverb, [\in, 6]);
+y = Synth.new(\blip, [\out, 6]);
+
+x.set(\out, 25);
+y.set(\in, 25);
+
+
+// BUS
+
+// In prev example We don't wannt to hardcode the channels (eg: 6 or 25). We can use the Bus object
+// and we can store it in a global var.
+// s is the server
+// 1 is the amount of channels needed. if more than 1, reverBus will actually store an ARRAY of Bus,
+// since one Bus is always 1 per channel.
+~reverbBus = Bus.audio(s, 1);
+~reverbBus.index; // will give the index of the first free bus
+// the bus will take care of not using the hardware reserved ones nor any already occupied private one)
+x = Synth.new(\reverb, [\in, ~reverbBus.index]);
+y = Synth.new(\blip, [\out, ~reverbBus.index]);
+// or shorter
+x = Synth.new(\reverb, [\in, ~reverbBus]);
+y = Synth.new(\blip, [\out, ~reverbBus]);
+
+
+
+
+
 // *************
 // *** UTILS ***
 // *************
 
+// *** ACTIONS *** //
+
 // starts the server // shorthand for Server.local.boot. The local server is stored in the s variable
 s.boot;
+
+s.reboot;
+
+// deallocating
+x.free
+s.freeAll;
+s.quit;
+
+
+// *** PARAMETERS *** //
+
+// num of available channels
+s.options.numAudioBusChannels; //eg 1024
+
+// reserved channels for hardware in/out
+s.options.numOutputBusChannels; // typically 2 for stereo (or 8 for dolby). so channel 0 and 1 are for output
+s.options.numInputBusChannels; // typically 2 (8 for dolby). so channel 2 and 3 are for input.
+// 4 to 1023 are private busses. free to use for utils.
+
+// these values can also be overriden:
+// s.options.numInputBusChannels = 8; // for example if we have an audio interface. must reboot the server after.
+
+// *** DEBUG *** //
 
 // shows the audio levels for current channels
 s.meter;
 
 //shows currently active Synths
 s.plotTree;
-
-// deallocating
-
-x.free
-s.freeAll;
-s.quit;
 
 
 
