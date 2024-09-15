@@ -646,6 +646,14 @@ x.value();
 // bufnums -> unique int id of the buffer. automatically assigned
 ~b0.bufnum;
 
+// EXTRA
+
+// Read part of a file see: https://youtu.be/_GZmuvmgtUc?t=619
+
+// Read all files in a folder: https://youtu.be/_GZmuvmgtUc?t=697
+
+// Beware: when loading big buffers (big file or lot of files) the server will become *inactive*!
+
 
 ~b0.zero; // resets the buffer
 ~b0.read(s, audioFilePath); // we can reuse it still
