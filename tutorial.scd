@@ -646,7 +646,48 @@ x.value();
 // bufnums -> unique int id of the buffer. automatically assigned
 ~b0.bufnum;
 
-// EXTRA
+// *** BUFFER PLAYBACK ***
+
+// PlayBuf and BufRd
+(
+SynthDef.new(\playbuf, {
+	arg amp = 1, out = 0, buf, rate = 1;
+	var sig;
+	sig = PlayBuf.ar(
+		2, // num channels must a be a constant. cannot be a variable.
+		buf,
+		BufRateScale.kr(buf) * rate, // BufRateScale adds a multiplier based on the sample rate difference of buffer andserver
+		doneAction: 2);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+Synth.new(\playbuf, [\buf, ~b0.bufnum])
+
+
+// note that the server has a sample rate (!!!)
+s.sampleRate;
+// if this does not match the buffer sample rate
+~b0.sampleRate;
+// then the buffer is automatically resammpled to match the server sample rate.
+// this means that when we play it with PlayBuf the buffer adjusts the rate, which causes a pitch and time shift.
+// to accomodate with this we can use some of the many UGens associated with Buffer: BufRateScale
+Synth.new(\playbuf, [\buf, ~b0.bufnum, \rate, 0.5]);
+
+// note more parameters such as t_trig, start or loop.
+
+// ADJUSTING PITCH
+
+// there is a direct correlation between pitch and ratio of the sampling.
+// but ratio is not intuitive.
+// in chromatic harmony: 1 octave == 12 midi notes == 2 times the ratio so
+12.midiratio; // 2.0. Meaning going up an Octave is doubling the frequency
+7.midiratio; // 1.5. Meaning a Fifth is one and a half the frequency
+-12.midiratio; // 0.5. Meaning going down an Octave is halving the frequency
+
+Synth.new(\playbuf, [\buf, ~b0.bufnum, \rate, 12.midiratio]);
+
+// *** EXTRA ***
 
 // Read part of a file see: https://youtu.be/_GZmuvmgtUc?t=619
 
