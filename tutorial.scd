@@ -745,6 +745,40 @@ Buffer.freeAll;
 
 
 // *************
+// *** MIDI ***
+// *************
+//ep.9
+
+// we need to start the midi server
+MIDIClient.init;
+// and connect to a midi device. such as a hardware interface.
+MIDIIn.connectAll;
+
+// we can intercept midi notes changes
+(
+MIDIDef.noteOn(\notetest, {
+	// vel velocity is the "amplitude". in a scale from 1 to 127
+	// src is just a unique identifier for the note (even accross different input devices)
+	arg vel, nn, chan, src;
+	[vel, nn, chan, src].postln;
+	{
+		var sign env;
+		// sig = SinOsc.ar(nn.midicps)!2;
+		//or
+		sig = LFTri.ar(nn.midicps)!2;
+		env = EnvGen.kr(Env.perc, doneAction: 2);
+		sig = sig * env * vel.linexp(1, 127, 0.01, 0.3) // convert the range of the ampllitude
+	}.play;
+});
+)
+// a better approach is to create a synthdef and call that instead of the in-place function
+// also have an array to keep the notes to release on "notOff" midi event;
+// not interesting atm. see https://youtu.be/Oz4KYZ9KLc0?t=638
+
+
+
+
+// *************
 // *** UTILS ***
 // *************
 
