@@ -777,6 +777,62 @@ MIDIDef.noteOn(\notetest, {
 
 
 
+// ****************
+// *** PATTERNS ***
+// ****************
+//ep.10
+
+// they generate sequence and groups of synths and more
+// read more in de docs here:
+// - "PG_01_Introduction"
+// - "Understanding Streams, Patterns and Events"
+// - "Pattern"
+
+(
+SynthDef.new(\sine, {
+	arg freq=440, atk=0.005, rel=0.3, amp=1, pan=0;
+	var sig, env;
+	sig = SinOsc.ar(freq);
+	env = EnvGen.kr(Env.new([0,1,0], [atk, rel], [1, -1]), doneAction: 2);
+	sig = Pan2.ar(sig, pan, amp);
+	sig = sig * env;
+	Out.ar(0, sig);
+}).add;
+)
+
+// respnds to play event generating a sequence of events
+// pbind expects a series of key-value pairs
+(
+p = Pbind(
+	\type, \note, // the default event. can be removed.
+	\instrument, \sine
+).play; // Pbind returns an EventStreamPlayer. which is the object actually playing
+)
+p.stop;
+
+(
+p = Pbind(
+	\instrument, \sine,
+	// dur or delta-time. defaults 1. controls the length of time between success events
+	\dur, 0.1,
+).play;
+)
+
+(
+p = Pbind(
+	\instrument, \sine,
+	// we can also have a non hardcoded value
+	\dur, Pseq([0.6, 0.15, 0.15], inf), // here we output the 3 values infinitely.
+).play;
+)
+
+(
+p = Pbind(
+	\instrument, \sine,
+	\dur, Pseq([0.6, 0.15, 0.15], inf).trace, // trace can be used to debug the values
+	\freq, Pseq([330, 247, 370], inf).trace, // we can also have a sequencial pattern for the frequency
+).play;
+)
 
 // *************
 // *** UTILS ***
