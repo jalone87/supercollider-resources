@@ -85,6 +85,12 @@ x = {SinOsc.ar(700) * 0.125}.play();
 
 // chain ugens
 
+// note ar vs kr difference.
+// SuperCollider calculates audio in groups of samples, called blocks.
+// - AudioRate means that the UGen will calculate a value for each sample in the block.
+// - There's another method, 'kr', which means KontrolRate. This means calculate a single value for each block of samples.
+
+
 (
 z = {
 	arg noiseHz = 8;
@@ -625,6 +631,7 @@ p = thisProcess.nowExecutingPath.dirname;
 // +/+ is an operator. makes sure paths are concatenatedd correctly.
 p = p +/+ "samples/M1F1-int32-AFsp.aif";
 ~b0 = Buffer.read(s, p);
+
 ~b0.play;
 
 // buffer attributes
@@ -648,7 +655,7 @@ x.value();
 
 // *** BUFFER PLAYBACK ***
 
-// PlayBuf and BufRd
+// PLAYBUF
 (
 SynthDef.new(\playbuf, {
 	arg amp = 1, out = 0, buf, rate = 1;
@@ -695,6 +702,39 @@ Synth.new(\playbuf, [\buf, ~b0.bufnum, \rate, 12.midiratio]);
 
 // Beware: when loading big buffers (big file or lot of files) the server will become *inactive*!
 
+// *** BUFFREAD ***
+
+(
+SynthDef.new(\bufread, {
+	arg amp = 1, out = 0, buf, start, end, rate = 1;
+	var sig, ptr;
+	// BufRd involves a pointer, which can be used to read the buffer
+	// ptr = Line.ar(start, end, BufDur.kr(buf), doneAction:2); //choose ar since we want to go at the audio rate
+	// if we want to loop we need to change ugen, since Line cant loop. Phasor is a linear rump osc from start to end.
+	ptr = Phasor.ar(0, BufRateScale.kr(buf) * rate, start, end);
+	sig = BufRd.ar(2, buf, ptr);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+Synth.new(\bufread, [\buf, ~b0.bufnum, \start, ~b0.numFrames-1, \end, 0]);
+
+// Sweep or LFSaw can also be used in place of phasor. as any audio rate ugen. eg:
+(
+SynthDef.new(\bufread_osc, {
+	arg amp = 1, out = 0, buf, start, end, freq = 1;
+	var sig, ptr;
+	ptr = SinOsc.ar(freq * 3pi/2).range(start, end);
+	sig = BufRd.ar(2, buf, ptr);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+Synth.new(\bufread_osc, [\buf, ~b0.bufnum, \start, ~b0.numFrames-1, \end, 0, \freq, 0.03]);
+
+// *** RECORD BUFFER ***
+
+// see RecordBuf and BufWr
 
 ~b0.zero; // resets the buffer
 ~b0.read(s, audioFilePath); // we can reuse it still
