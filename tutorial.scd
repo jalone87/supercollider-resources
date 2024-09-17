@@ -834,6 +834,46 @@ p = Pbind(
 ).play;
 )
 
+// note the repeat parameter se to inf. if one of the repeats is smaller, then the sequence with
+// the SMALLER "list.count * repeats" will be the max duration of the pattern
+// the following generates 8 events
+(
+p = Pbind(
+	\instrument, \sine,
+	\dur, Pseq([0.6, 0.15, 0.15], 4).trace, // would generate 16 = 3*4 events
+	\freq, Pseq([330, 247, 370, 220], 2).trace, // would generate 8 = 4*2 events
+).play;
+)
+
+// using midi notes
+// this works despite \sine not haveing a `midinote` parameter cos Pbind expect a certain herarchy of parameters
+// and if the instrument defines it's parameters accordingly, then Pbind can convert from additional parameters.
+// `freq` is one of such parameters. and `midinote` is a derived parameter.
+(
+p = Pbind(
+	\instrument, \sine,
+	\dur, Pseq([0.6, 0.15, 0.15], inf).trace,
+	\midinote, Pseq([60, 65, 67, 74], inf).trace,
+).play;
+)
+
+//lets ad dmore parameters
+(
+p = Pbind(
+	\instrument, \sine,
+	\dur, Pwhite(0.05, 0.5, inf),
+	\freq, Pexprand(50, 4000, inf).trace,
+	\atk, Pwhite(2.0, 3.0),
+	\rel, Pwhite(5.0, 10.0),
+	\amp, Pexprand(0.01, 0.2),
+	\pan, Pwhite(-0.8, 0.8),
+).play;
+)
+
+
+
+
+
 // *************
 // *** UTILS ***
 // *************
