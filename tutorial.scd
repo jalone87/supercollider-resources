@@ -857,12 +857,13 @@ p = Pbind(
 ).play;
 )
 
-//lets ad dmore parameters
+//lets ad dmore parameters.
+// also we can apply math operation to patterns. like round
 (
 p = Pbind(
 	\instrument, \sine,
 	\dur, Pwhite(0.05, 0.5, inf),
-	\freq, Pexprand(50, 4000, inf).trace,
+	\freq, Pexprand(50, 2000, inf).round(40).trace,
 	\atk, Pwhite(2.0, 3.0),
 	\rel, Pwhite(5.0, 10.0),
 	\amp, Pexprand(0.01, 0.2),
@@ -870,9 +871,53 @@ p = Pbind(
 ).play;
 )
 
+// the same can be achieved with midinote and "harmonic"
+(
+p = Pbind(
+	\instrument, \sine,
+	\dur, Pwhite(0.05, 0.5, inf),
+	\midinote, 33,
+	\harmonic, Pexprand(1, 80).round.trace,
+	\atk, Pwhite(2.0, 3.0),
+	\rel, Pwhite(5.0, 10.0),
+	\amp, Pexprand(0.01, 0.2),
+	\pan, Pwhite(-0.8, 0.8),
+).play;
+)
+// but the high "partials" (multiples of 33) are too high volume. lets lower them
+(
+p = Pbind(
+	\instrument, \sine,
+	\dur, Pwhite(0.05, 0.5, inf),
+	\midinote, 33,
+	\harmonic, Pexprand(1, 80).round.trace,
+	\atk, Pwhite(2.0, 3.0),
+	\rel, Pwhite(5.0, 10.0),
+	// Pkey copies patterns from an erlier key
+	\amp, Pkey(\harmonic).reciprocal * 0.3,
+	\pan, Pwhite(-0.8, 0.8),
+).play;
+)
+
+// if we want to do realtime pattern manipulation (like in a live set) we can enclose the pattern in a Pdef
+(
+Pdef(\sinepat,
+	Pbind(
+		\instrument, \sine,
+		\dur, Pwhite(0.05, 0.5, inf),
+		\midinote, Pseq([35], inf),
+		\harmonic, Pexprand(1, 20, inf).round.trace,
+		\atk, Pwhite(0.005, 0.01, inf),
+		\rel, Pwhite(0.1, 0.2, inf),
+		// Pkey copies patterns from an erlier key
+		\amp, Pkey(\harmonic).reciprocal * 0.8,
+		\pan, Pwhite(-0.8, 0.8, inf),
+	);
+).play;
+) //we can now change any of the parameters and they will be applied in real time. incuding changing play with stop
 
 
-
+p.stop;
 
 // *************
 // *** UTILS ***
