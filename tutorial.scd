@@ -976,7 +976,90 @@ p.stop;
 //ep. 11
 
 // OSC is an alternative to MIDI that does not require hardware and can work with internet protocols like UDP and TCP
-// skipt. see https://www.youtube.com/watch?v=ZVTbRNu2BI0&ab_channel=EliFieldsteel
+// skept. see https://www.youtube.com/watch?v=ZVTbRNu2BI0&ab_channel=EliFieldsteel
+
+
+
+// ***************
+// *** WiiMote ***
+// ***************
+//ep. 12
+// skept: https://www.youtube.com/watch?v=JRIUq-46V6M&ab_channel=EliFieldsteel
+
+
+
+// *******************
+// *** Xbox Kinect ***
+// *******************
+//ep. 13
+// mostly skept: https://www.youtube.com/watch?v=dbSTq_UsFK4&ab_channel=EliFieldsteel
+
+// create an ASYNC task
+(
+~testAsync = Task.new({  // very similar is Routine
+	{
+		"hi".postln;
+		2.wait
+	}.loop;
+}).play;
+)
+
+
+
+// ***********
+// *** GUI ***
+// ***********
+//ep. 14
+
+w = Window.new;
+// w.alwaysOnTop = true;
+// all variables have a builder function version which returns self, so one can concatenate functions.
+// see "Syntax Shortcut" with CMD+D
+w.alwaysOnTop_(true);
+
+GUI.current;
+w.bounds; // reference frame: BOTTOM-left
+
+
+// creates a new window
+(
+
+Window.closeAll;
+w = Window.new(
+	"A GUI!",
+	Rect.new(
+		Window.screenBounds.width -500, 200, // positions it bottm right
+		400, 400 // squared size
+	)
+);
+w.front;
+w.alwaysOnTop_(true);
+
+// no need for "new"
+~slider = Slider(w.view, Rect.new(20, 20, 150, 30)); // reference frame for view is TOP-left
+~slider.action_({
+	arg val;
+	("Slider value changed"+val.value).postln;
+});
+)
+
+// lists all child views
+w.view.children;
+
+~slider.enabled_(true);
+
+~slider.value = 0.5; // will not execute action
+// we can set the value AND perform the connected action (see the console)
+~slider.valueAction_(0.2);
+
+
+
+
+~slider.remove;
+w.close;
+Window.closeAll;
+
+
 
 // *************
 // *** UTILS ***
