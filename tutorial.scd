@@ -899,7 +899,7 @@ p = Pbind(
 ).play;
 )
 
-// if we want to do realtime pattern manipulation (like in a live set) we can enclose the pattern in a Pdef
+// if we want to do REALTIME PATTERN MANIPULATION (like in a live set) we can enclose the pattern in a Pdef
 (
 Pdef(\sinepat,
 	Pbind(
@@ -909,15 +909,74 @@ Pdef(\sinepat,
 		\harmonic, Pexprand(1, 20, inf).round.trace,
 		\atk, Pwhite(0.005, 0.01, inf),
 		\rel, Pwhite(0.1, 0.2, inf),
-		// Pkey copies patterns from an erlier key
-		\amp, Pkey(\harmonic).reciprocal * 0.8,
+		// Pkey copies patterns from an erlier key. here we lower the amp of higher armonics
+		\amp, Pkey(\harmonic).reciprocal * 0.3,
 		\pan, Pwhite(-0.8, 0.8, inf),
 	);
 ).play;
 ) //we can now change any of the parameters and they will be applied in real time. incuding changing play with stop
 
 
+// *** COORDINATE MULTIPLE PDEF and QUANTIZATION ***
+(
+// 1
+Pdef(\sinepat,
+	Pbind(
+		\instrument, \sine,
+		\dur, Pseq([1/16], inf),
+		\stretch, 1.875,
+		\midinote, Pseq([35], inf),
+		\harmonic, Pexprand(1, 20, inf).round.trace,
+		\atk, Pwhite(0.005, 0.01, inf),
+		\rel, Pwhite(0.1, 0.2, inf),
+		// Pkey copies patterns from an erlier key. here we lower the amp of higher armonics
+		\amp, Pkey(\harmonic).reciprocal * 0.3,
+		\pan, Pwhite(-0.8, 0.8, inf),
+	);
+).play(quant:1.875);
+
+// 2
+// DISCLAIMER: this will not play atm, it requires an array of buffered audiofiles 'd'. only for showcase
+Pdef(\rhytms,
+	Pbind(
+		\instrument, \bufplay,
+		//\dur, Pseq([0.12], inf),
+		// hard to count in seconds for rhytm. we want beats per minute.
+		// in the specific we want: 16 notes at 128 bpm with time signature 4/4
+		\dur, Pseq([1/16], inf), // 4/4
+		// converts "beats per minute" -> "seconds per bar"
+		\stretch, 1.875,  //128/60 bpm per sec -> 60/128 sec per beat -> (60/128)*4 four beats per bar. in secodns
+		\buf, Pwrand([], inf), // INCOMPLETE! see https://youtu.be/nB_bVJ1c1Rg?t=1315 if needed
+		\rate, 1,
+		// higher volume on the first note give accent on the beat 1 and 3 (16 notes..)
+		//\amp, Pseq([0.8, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], inf),
+		// or faster
+		\amp, Pseq([0.8]++(0.1!7), inf), // ++ concatenates, ! creates n array remember
+	);
+// note, if we make changes live and re-play the patterns, we get some glitches.
+// this because the pdef are not aligned, or better "quantized".
+// so that any changes to the pattern won't happen untill next hard beat
+).play(quant:1.875);
+
+)
+
+// note: in place of Prand we can use some more alternatives:
+// - Pxrand -> never chooses the same value again
+// - Pwrand -> weights the randomness accordin to a second array of weights https://youtu.be/nB_bVJ1c1Rg?t=1282
+// - Pshuf -> chooses a random order and sticks to it
+
+
 p.stop;
+
+
+
+// ***********
+// *** OSC ***
+// ***********
+//ep. 11
+
+// OSC is an alternative to MIDI that does not require hardware and can work with internet protocols like UDP and TCP
+// skipt. see https://www.youtube.com/watch?v=ZVTbRNu2BI0&ab_channel=EliFieldsteel
 
 // *************
 // *** UTILS ***
