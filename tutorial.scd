@@ -1011,6 +1011,7 @@ p.stop;
 // ***********
 //ep. 14
 
+
 w = Window.new;
 // w.alwaysOnTop = true;
 // all variables have a builder function version which returns self, so one can concatenate functions.
@@ -1023,7 +1024,6 @@ w.bounds; // reference frame: BOTTOM-left
 
 // creates a new window
 (
-
 Window.closeAll;
 w = Window.new(
 	"A GUI!",
@@ -1041,6 +1041,12 @@ w.alwaysOnTop_(true);
 	arg val;
 	("Slider value changed"+val.value).postln;
 });
+
+// styling
+~slider.background_(Color(1, 0.5, 0))
+//.background_(Color.magenta(0.5)); // standard colors provided. function interpolate with black
+.knobColor_(Color(1, 0.5, 0))
+.thumbSize_(40);
 )
 
 // lists all child views
@@ -1052,7 +1058,41 @@ w.view.children;
 // we can set the value AND perform the connected action (see the console)
 ~slider.valueAction_(0.2);
 
+// *** CONNECTING GUI AND AUDIO ***
+( // simple band pass filter
+SynthDef.new(\simplebpf, {
+	arg freq=400;
+	var sig;
+	sig = PinkNoise.ar(1!2);
+	// lag interpolates the signal to avoid pops sounds when the slider jumps
+	// tpp much and the sound lags. too little and the sound pops
+	sig = BPF.ar(sig, freq.lag(0.5), 0.2);
+	Out.ar(0, sig);
+}).add;
+// the gui
+)
+(
+Window.closeAll;
+w = Window("Band Pass Filter", Rect(Window.screenBounds.width -500, 200, 400, 400))
+.front
+.alwaysOnTop_(true);
 
+~slider = Slider(w, Rect(20, 20, 150, 30))
+.background_(Color(1, 0.5, 0))
+.action_({
+	arg obj;
+	var cf;
+	cf = obj.value.linexp(0, 1, 100, 4000).postln;
+	x.set(\freq, cf); // here we change the synthdef
+});
+)
+
+(
+x = Synth.new(\simplebpf, [
+	// initializes the freq with the slider value
+	\freq, ~slider.value.linexp(0, 1, 100, 4000);
+]);
+)
 
 
 ~slider.remove;
