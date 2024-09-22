@@ -1062,38 +1062,78 @@ w.view.children;
 (
 // simple band pass filter
 SynthDef.new(\simplebpf, {
-	arg freq=400;
+	arg freq=400, rq=0.2; // rq is the "quality" of the filter
 	var sig;
 	sig = PinkNoise.ar(1!2);
 	// lag interpolates the signal to avoid pops sounds when the slider jumps
 	// tpp much and the sound lags. too little and the sound pops
-	sig = BPF.ar(sig, freq.lag(0.5), 0.2);
+	sig = BPF.ar(
+		sig,
+		freq.lag(0.5),
+		rq.lag(0.5), // quality of the filter.  >is this the "size" of thebandwidth of the filter?<
+		1/rq.sqrt.lag(0.5)); // incorporate rq in the mul, since chning the filters changes the amp, this compensates.
 	Out.ar(0, sig);
 }).add;
 
 // the gui
 Window.closeAll;
-w = Window("Band Pass Filter", Rect(Window.screenBounds.width -500, 200, 400, 400), false)
+w = Window("Band Pass Filter", Rect(Window.screenBounds.width -500, 200, 440, 400), false)
 .front
 .alwaysOnTop_(true);
 
 ~accentColor = Color(1, 0.5, 0);
+~font = Font("San Francisco");
 
+// slider for the filter frequency parameter
 ~slider = Slider(w, Rect(20, 20, 150, 30))
 .background_(~accentColor)
 .action_({
 	arg obj;
 	var cf;
 	cf = obj.value.linexp(0, 1, 100, 4000).postln;
-	x.set(\freq, cf); // here we change the synthdef
+	if (
+		x.isPlaying, // thanks to register (see Synth.register in button.active_ ) we can observe the node (synth) state
+		{ x.set(\freq, cf); } // here we change the synthdef. safely without errors thanks to the guard
+	);
+	// note it is not calling .valueAction_() not to have the slider and numBox actions call eachother infinitely
+	~numberBox.value_(obj.value.linexp(0, 1, 100, 4000));
 });
 
-~button = Button(w, Rect(190, 20, 80, 30))
+~freqLabel = StaticText(w, Rect(20, 50, 150, 30))
+.string_("Frequency")
+.font_(~font, 14)
+.align_(\left);
+
+// label for the frequency
+~numberBox = NumberBox(w,  Rect(190, 20, 80, 30))
+.value_(100) // same initial value of slider
+.clipLo_(100)
+.clipHi_(4000)
+.font_(~font, 16)
+.decimals_(2)
+.action_({
+	arg obj;
+	~slider.valueAction_(obj.value.explin(100, 4000, 0, 1));
+});
+
+// knob for the filter quality parameter
+~knob = Knob(w,  Rect(290, 20, 30, 30))
+.action_({
+	arg obj;
+	var qual;
+	qual = obj.value.linexp(0, 1, 1, 100).reciprocal;
+	if (
+		x.isPlaying,
+		{ x.set(\rq, qual); }
+	)
+});
+
+~button = Button(w, Rect(340, 20, 80, 30))
 .states_([ // we can have N states. each a member of an array
 	["Disabled", Color.black, Color.gray(0.8)], // each state is another array, state, foregraound, bg color
 	["Enabled", Color.black, ~accentColor]
 ])
-.font_(Font("San Francisco"), 18)
+.font_(~font, 18)
 .action_({
 	arg obj;
 	if (
@@ -1101,9 +1141,12 @@ w = Window("Band Pass Filter", Rect(Window.screenBounds.width -500, 200, 400, 40
 		{ // true
 			// start sound
 			x = Synth.new(\simplebpf, [
-				// initializes the freq with the slider value
-				\freq, ~slider.value.linexp(0, 1, 100, 4000);
-			]);
+				// initializes the synth with the initial value of gui elements
+				\freq, ~slider.value.linexp(0, 1, 100, 4000),
+				\rq, ~knob.value.linexp(0, 1, 1, 100)
+			])
+			// register with NodeWatcher so we can check in the action if the synth is playing to avoid errors
+			.register;
 		},
 		{ // false
 			x.free;
