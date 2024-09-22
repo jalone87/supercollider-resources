@@ -54,9 +54,9 @@ w.view.children;
 ~slider.valueAction_(0.2);
 
 
-
-// *** CONNECTING GUI AND AUDIO + VIEWS SHOWCASE***
-
+// *************************************************
+// *** CONNECTING GUI AND AUDIO + VIEWS SHOWCASE ***
+// *************************************************
 
 
 (
@@ -196,6 +196,113 @@ LevelIndicator(w, Rect(80, 480, 10, 60))
 )
 
 
+
+
+// *****************************
+// *** DECORATOR: FlowLayout ***
+// *****************************
+
+(
+Window.closeAll;
+
+w = Window("Flow Layout", Rect(Window.screenBounds.width -500, 200, 400, 400))
+.front
+.alwaysOnTop_(true);
+
+
+/*w.view.decorator_(FlowLayout(
+	w.bounds, // bounds
+	Point(20, 20), // margins
+	Point(10, 10) // spacing
+));*/
+// or faster
+w.view.decorator_(FlowLayout(w.bounds, 20@20, 10@10 ));
+
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 80@80);
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 40@40);
+Knob(w, 40@40);
+
+// force new line
+w.view.decorator.nextLine;
+w.view.decorator.nextLine;
+20.do{ Knob(w, 40@40) };
+
+
+// iteration
+w.view.children.collect(_.value_(rrand(0.0, 1.0)));
+
+)
+
+// if elements are removed with
+w.view.children.collect(_.remove);
+// then then next added objects will continue from the last position.
+Knob(w, 40@40);
+//to reset to the beginning:
+w.view.decorator.reset;
+Knob(w, 40@40);
+
+
+
+// ********************
+// *** NESTED VIEWS ***
+// ********************
+
+// CompositeView is a continer for group of views
+(
+Window.closeAll;
+w = Window("CompositeView", Rect(750, 50, 500, 500))
+.front
+.alwaysOnTop_(true);
+
+w.view.decorator_(FlowLayout(w.bounds, 30@30, 30@30));
+
+c = Array.fill(4, {
+	arg view;
+	view = CompositeView(w, 200@200)
+	.background_(Color.rand);
+
+	view.decorator_(FlowLayout(view.bounds, 5@5, 5@5));
+});
+
+Array.fill(5, {Slider(c[0], 30@150)});
+Array.fill(8, {Knob(c[1], 40@40)});
+)
+c[0].children[2].value_(0.5);
+c[1].children.collect(_.value_(0.75));
+
+
+
 ~slider.remove;
 w.close;
 Window.closeAll;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
