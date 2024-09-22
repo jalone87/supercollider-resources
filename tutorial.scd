@@ -1059,7 +1059,8 @@ w.view.children;
 ~slider.valueAction_(0.2);
 
 // *** CONNECTING GUI AND AUDIO ***
-( // simple band pass filter
+(
+// simple band pass filter
 SynthDef.new(\simplebpf, {
 	arg freq=400;
 	var sig;
@@ -1069,29 +1070,46 @@ SynthDef.new(\simplebpf, {
 	sig = BPF.ar(sig, freq.lag(0.5), 0.2);
 	Out.ar(0, sig);
 }).add;
+
 // the gui
-)
-(
 Window.closeAll;
-w = Window("Band Pass Filter", Rect(Window.screenBounds.width -500, 200, 400, 400))
+w = Window("Band Pass Filter", Rect(Window.screenBounds.width -500, 200, 400, 400), false)
 .front
 .alwaysOnTop_(true);
 
+~accentColor = Color(1, 0.5, 0);
+
 ~slider = Slider(w, Rect(20, 20, 150, 30))
-.background_(Color(1, 0.5, 0))
+.background_(~accentColor)
 .action_({
 	arg obj;
 	var cf;
 	cf = obj.value.linexp(0, 1, 100, 4000).postln;
 	x.set(\freq, cf); // here we change the synthdef
 });
-)
 
-(
-x = Synth.new(\simplebpf, [
-	// initializes the freq with the slider value
-	\freq, ~slider.value.linexp(0, 1, 100, 4000);
-]);
+~button = Button(w, Rect(190, 20, 80, 30))
+.states_([ // we can have N states. each a member of an array
+	["Disabled", Color.black, Color.gray(0.8)], // each state is another array, state, foregraound, bg color
+	["Enabled", Color.black, ~accentColor]
+])
+.font_(Font("San Francisco"), 18)
+.action_({
+	arg obj;
+	if (
+		obj.value == 1, // condition
+		{ // true
+			// start sound
+			x = Synth.new(\simplebpf, [
+				// initializes the freq with the slider value
+				\freq, ~slider.value.linexp(0, 1, 100, 4000);
+			]);
+		},
+		{ // false
+			x.free;
+		}
+	)
+})
 )
 
 
