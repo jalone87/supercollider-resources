@@ -1077,7 +1077,7 @@ SynthDef.new(\simplebpf, {
 
 // the gui
 Window.closeAll;
-w = Window("Band Pass Filter", Rect(Window.screenBounds.width -500, 200, 440, 400), false)
+w = Window("Band Pass Filter", Rect(Window.screenBounds.width -500, 200, 440, 600), false)
 .front
 .alwaysOnTop_(true);
 
@@ -1152,7 +1152,47 @@ w = Window("Band Pass Filter", Rect(Window.screenBounds.width -500, 200, 440, 40
 			x.free;
 		}
 	)
-})
+});
+
+
+// *** other commonly used GUI elements ***
+
+PopUpMenu(w, Rect(20, 90, 120, 30))
+.items_(["", "one", "two", "three"]);
+
+RangeSlider(w, Rect(20, 140, 120, 30));
+
+MultiSliderView(w, Rect(160, 140, 120, 80))
+.size_(9);
+
+TextField(w, Rect(20, 190, 120, 30));
+
+TextView(w, Rect(20, 240, 120, 120));
+
+Slider2D(w, Rect(160, 240, 120, 120));
+
+
+~soundFileView = SoundFileView(w, Rect(20, 400, 400, 60));
+~soundFile = SoundFile.new;
+~soundFile .openRead(thisProcess.nowExecutingPath.dirname +/+ "samples/M1F1-int32-AFsp.aif");
+~soundFile .inspect;
+~soundFileView.soundfile = ~soundFile;
+~soundFileView.read(0, ~soundFile.numFrames);
+~soundFileView.timeCursorOn = true;
+~soundFileView.timeCursorColor = Color.red;
+~soundFileView.timeCursorPosition = 2050;
+~soundFileView.drawsWaveForm = true;
+~soundFileView.gridOn = true;
+~soundFileView.gridResolution = 0.2;
+
+
+LevelIndicator(w, Rect(20, 480, 10, 60))
+.value = 0.2;
+LevelIndicator(w, Rect(50, 480, 10, 60))
+.value = 0.9;
+LevelIndicator(w, Rect(80, 480, 10, 60))
+.value = 0.7;
+
 )
 
 
