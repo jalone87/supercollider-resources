@@ -208,7 +208,97 @@ Synth.new(
 // ep.16
 // https://www.youtube.com/watch?v=oR4VZy2LJ60&ab_channel=EliFieldsteel
 
+// using the same synth with samples and buffers
+// will be skipped, file and samples are not interesting atm.
 
+// - read recursively folder with sound files
+// - dictionaries: https://youtu.be/oR4VZy2LJ60?t=864
+// - reverb (dry + wet), DelayN, AllpassN
+
+
+// *** ServerTree ***
+
+// let the server automatically reevaluate some synths and instances when it is rebooted or started
+
+~reverbBus = Bus.audio(s, 2);
+
+~createReverb = {~reverbSynth = Synth(\bpfsaw2, [\in, ~reverbBus])};
+ServerTree.add(~createReverb);
+// clean all instances
+ServerTree.removeAll;
+
+
+
+
+// ************************
+// *** COMPOSITION pt.3 ***
+// ************************
+// ep.17
+
+// automating and organazing synths
+
+
+// 1. server config
+// 2. initialize global vairables
+// 3. define piece-specific functions
+// 4. register functions with ServerBoot/Quit/Tree
+// 5. boot server
+// 6. anything else required to boot the server
+
+// 1. server config ----
+
+s = Server.local;
+
+ServerOptions.devices; // find the one you want and copy in the next lines
+s.options.outDevice_(
+	"External Headphones"
+	// "LG UltraFine Display Audio"
+);
+s.options.numOutputBusChannels_(2); // make sure it matches the output device
+s.options.inDevice_("LG UltraFine Display Audio");
+s.options.numInputBusChannels_(2);
+s.optionns.sampleRate_(44100);
+
+s.options.memSize; // default 8.192KB
+// quite easy to exceed available memory, especially with big delays Ugens (eg DelayN),
+// since these needs to store in memory all the samples for the whole delay duration.
+// 1 second at 44100 samle rate a 32bit float format depth,
+// 1 sample is 4Byte (32bit), 1 second = 44100 * 4 = 176400 bytes, 176.4 KB for 1 second
+// s.options.memSize_(2.pow(20)); // around 1 GB
+s.options.memSize_(2.pow(18)); // around 262 MB
+
+
+// 2. initialize global vairables ----
+
+~out = 0; // very useful when changing interfaces with multiple outputs
+
+
+// 3. define piece-specific functions ---
+
+// eg: a function to read sound buffers from a folder
+(
+~makeBuffers = {
+	b = Dictionary.new;
+	PathName("some path").entries.do{
+		arg subfolder;
+		b.add(
+			subfolder.folderName.asSymbol ->
+			Array.fill(
+				subfolder.entries.size,
+				{
+					arg i;
+					Buffer.read(s, subfolder.entries[i].fullPath);
+				}
+			)
+		);
+	};
+};
+)
+
+
+// 4. register functions with ServerBoot/Quit/Tree ---
+
+ServerTree
 
 // *** utils ***
 
