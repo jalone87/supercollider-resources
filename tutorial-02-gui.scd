@@ -174,7 +174,7 @@ Slider2D(w, Rect(160, 240, 120, 120));
 
 ~soundFileView = SoundFileView(w, Rect(20, 400, 400, 60));
 ~soundFile = SoundFile.new;
-~soundFile .openRead(thisProcess.nowExecutingPath.dirname +/+ "samples/M1F1-int32-AFsp.aif");
+~soundFile .openRead(thisProcess.nowExecutingPath.dirname +/+ "samples/various/MaleFemale_int32_AFsp.aif");
 ~soundFile .inspect;
 ~soundFileView.soundfile = ~soundFile;
 ~soundFileView.read(0, ~soundFile.numFrames);

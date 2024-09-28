@@ -629,7 +629,7 @@ x = Synth.new(\reverb, [\in, ~reverbBus], ~fxGroup);
 // sc file path. see https://stackoverflow.com/a/18938315/691977
 p = thisProcess.nowExecutingPath.dirname;
 // +/+ is an operator. makes sure paths are concatenatedd correctly.
-p = p +/+ "samples/M1F1-int32-AFsp.aif";
+p = p +/+ "samples/various/MaleFemale_int32_AFsp.aif";
 ~b0 = Buffer.read(s, p);
 
 ~b0.play;

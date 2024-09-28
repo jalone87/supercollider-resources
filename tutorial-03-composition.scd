@@ -271,7 +271,7 @@ s.options.memSize_(2.pow(18)); // around 262 MB
 // 2. initialize global vairables ----
 
 ~out = 0; // very useful when changing interfaces with multiple outputs
-
+~samplesPath = PathName(thisProcess.nowExecutingPath).parentPath++"samples/";
 
 // 3. define piece-specific functions ---
 
@@ -279,7 +279,7 @@ s.options.memSize_(2.pow(18)); // around 262 MB
 (
 ~makeBuffers = {
 	b = Dictionary.new;
-	PathName("some path").entries.do{
+	PathName(~samplesPath).entries.do{
 		arg subfolder;
 		b.add(
 			subfolder.folderName.asSymbol ->
@@ -298,7 +298,13 @@ s.options.memSize_(2.pow(18)); // around 262 MB
 
 // 4. register functions with ServerBoot/Quit/Tree ---
 
-ServerTree
+// CMD + . has no effect on allocated bufffers so we can
+ServerTree.add(~makeBuffers);
+
+Buffer.freeAll;
+s.quit;
+
+b[\various][0].play;
 
 // *** utils ***
 
