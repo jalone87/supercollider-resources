@@ -266,6 +266,10 @@ s.options.memSize; // default 8.192KB
 // 1 sample is 4Byte (32bit), 1 second = 44100 * 4 = 176400 bytes, 176.4 KB for 1 second
 // s.options.memSize_(2.pow(20)); // around 1 GB
 s.options.memSize_(2.pow(18)); // around 262 MB
+s.newBusAllocators;
+ServerBoot.removeAll;
+ServerTree.removeAll;
+ServerQuit.removeAll;
 
 
 // 2. initialize global vairables ----
@@ -295,16 +299,193 @@ s.options.memSize_(2.pow(18)); // around 262 MB
 };
 )
 
+(
+~makeBusses = {
+	~bus = Dictionary.new;
+	// ~bus.add(\reverb -> Bus.audio(s,2));
+};
+)
+
+(
+~cleanup = {
+	s.newBusAllocators;
+	ServerBoot.removeAll;
+	ServerTree.removeAll;
+	ServerQuit.removeAll;
+};
+)
+
+(
+~makeNodes = {
+	// bind takes a function creates a bundles that are execute at the same time
+	// to make sure all the var are initialized in time
+	s.bind({
+		// head of the node tree, target for the node tree that generates signals
+		~mainGrp = Group.new;
+		// other groups, for example a reverb
+		~revverbGrp = Group.new;
+		~reverbSynth = Synth.new(
+			\reverb,
+			[
+				\amp, 1,
+				\predelay, 0.1,
+				//...
+			]
+		);
+	});
+};
+)
+
+~makeEvents = {
+	e = Dictionary.new;
+	e.add(\event1 -> {"event1".postln;});
+	e.add(\event2 -> {"event2".postln;});
+	e.add(\event3 -> {"event3".postln;});
+
+	MIDIdef.cc(\controller, {nil});
+}
+
 
 // 4. register functions with ServerBoot/Quit/Tree ---
 
-// CMD + . has no effect on allocated bufffers so we can
-ServerTree.add(~makeBuffers);
+// CMD + . has no effect on allocated bufffers so we can add it only to server boot (as opposite to serverTree)
+ServerBoot.add(~makeBuffers);
 
-Buffer.freeAll;
+// busses shall not be reallocated so we use callback on server boot/quit
+ServerBoot.add(~makeBusses);
+ServerQuit.add(~cleanup);
+
+/*Buffer.freeAll;
 s.quit;
 
-b[\various][0].play;
+b[\various][0].play;*/
+
+// 5. boot server
+
+// takes a few seconds t boot a server
+s.waitForBoot({
+	// callback for boot completed
+	// waits to execute for the server that the tasks are completed (eg: the ServerBoot functions)
+	s.sync; // see exaplanation below
+
+	// 6.a register SynthDefs
+
+	// here go all the synth definitions
+	SynthDef(\bpfsaw2, {
+		arg atk=2, sus=0, rel=3, c1=1, c2=(-1), freq=500, detune=0.2, pan=0,
+		cfhzmin=0.1, cfhzmax=0.3, cfmin=500, cfmax=2000, rqmin=0.1, rqmax=0.2,
+		lsf=200, ldb=0, amp=1, out=0;
+		var sig, env;
+
+		env = EnvGen.kr(Env([0,1,1,0], [atk, sus, rel], [c1, 0, c2]), doneAction: 2);
+		sig = Saw.ar(freq * {LFNoise1.kr(0.5, detune).midiratio}!2);
+		sig = BPF.ar(
+			sig,
+			{
+				LFNoise1.kr(
+					LFNoise1.kr(4).exprange(cfhzmin, cfhzmax)
+				).exprange(cfmin, cfmax)
+			}!2,
+			{
+				LFNoise1.kr(0.1).exprange(rqmin, rqmax)
+			}!2
+		);
+		sig = BLowShelf.ar(sig, lsf, 0.5, ldb);
+		sig = Balance2.ar(sig[0], sig[1], pan);
+		sig = sig * env * amp;
+		Out.ar(out, sig);
+	}).add;
+
+	s.sync
+
+	// 6.b register remaining functions
+
+	ServerTree.add(~makeNodes);
+	ServerTree.add(~makeEvents);
+	s.freeAll;
+
+	s.sync;
+
+	"READY".postln;
+
+});
+
+
+
+
+// *******************
+// *** ASYNC TASKS ***
+// *******************
+
+
+// *** "Synchronous and Asynchronous Execution" CMD+D ***
+
+// - sync: reading a buffer. for actions that should not lag the sound
+// - async: adding a synth
+
+// eg: add a synth, and immediately executing it won't prob work
+(
+SynthDef(\synchtest, {
+	var sig;
+	sig = {SinOsc.ar(ExpRand(300, 3000), 0, 0.2)}!50;
+	sig = sig.sum;
+	sig = sig * EnvGen.kr(Env([0,1,0], [2,2], [1, -1]), doneAction: 2) * 0.2;
+	Out.ar(0, sig!2);
+}).add;
+Synth(\synchtest);
+)
+
+// we can add a "wait", but this can be done only inside a "Routine" or other async funcs
+( // will give error
+"foo".postln;
+1.wait;
+"bar".postln;
+)
+( // will work
+Routine({
+	"foo".postln;
+	1.wait;
+	"bar".postln;
+}).play;
+)
+
+// same problem for the GUI if we try to time something
+// there are 3 clocks:
+// - SystemClock: high priority and precisions
+// - TempoClock: same as system, but for audio
+// - AppClock: low priority. good for GUI for example
+
+// Routine plays by default on TempoClock. we can change for the GUI
+(
+Routine({
+	SynthDef(\synchtest, {
+		var sig;
+		sig = {SinOsc.ar(ExpRand(300, 3000), 0, 0.2)}!50;
+		sig = sig.sum;
+		sig = sig * EnvGen.kr(Env([0,1,0], [2,2], [1, -1]), doneAction: 2) * 0.2;
+		Out.ar(0, sig!2);
+	}).add;
+	1.wait;
+	Synth(\synchtest);
+}).play(AppClock);
+)
+
+// but even better is to use s.sync; // waits untill or pending command are executed
+(
+Routine({
+	SynthDef(\synchtest, {
+		var sig;
+		sig = {SinOsc.ar(ExpRand(300, 3000), 0, 0.2)}!50;
+		sig = sig.sum;
+		sig = sig * EnvGen.kr(Env([0,1,0], [2,2], [1, -1]), doneAction: 2) * 0.2;
+		Out.ar(0, sig!2);
+	}).add;
+
+	s.sync;
+
+	Synth(\synchtest);
+}).play(AppClock);
+)
 
 // *** utils ***
 
