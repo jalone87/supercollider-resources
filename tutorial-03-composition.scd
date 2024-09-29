@@ -343,6 +343,8 @@ ServerQuit.removeAll;
 	e.add(\event2 -> {"event2".postln;});
 	e.add(\event3 -> {"event3".postln;});
 
+	// more info on tutorial 17, min 47:00: https://youtu.be/P85X1Ut3Hfc?t=2818
+	// used with a midi controller/device
 	MIDIdef.cc(\controller, {nil});
 }
 
