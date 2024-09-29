@@ -136,3 +136,13 @@ s.waitForBoot({
 });
 
 )
+
+
+// *** utils ***
+
+s.boot;
+s.reboot;
+s.meter;
+s.plotTree;
+
+s.quit;

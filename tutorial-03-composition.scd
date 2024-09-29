@@ -336,6 +336,7 @@ ServerQuit.removeAll;
 };
 )
 
+// more info on how to setup events on tutorial 17, min 40:00 -> https://youtu.be/P85X1Ut3Hfc?t=2390
 ~makeEvents = {
 	e = Dictionary.new;
 	e.add(\event1 -> {"event1".postln;});
