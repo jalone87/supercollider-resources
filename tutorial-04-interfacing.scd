@@ -85,9 +85,23 @@ r = Routine({
 
 // we can use Patterns, Pb  ind in particular, to generate
 // more live/realtime friendly and complex tunes
+(
+~fm8 = Pbind(
+	\type, \midi,
+	\midicmd, \noteOn,
+	\midiout, m,
+	\chan, 0,
+	\midinote, Pwrand([62,74,86,98], [0.1, 0.8, 0.08, 0.2], inf),
+	\amp, Pexprand(5,100, inf) /127, // amp is [0-1] but midi is [0-127]
+	\sustain, 0.02,
+	\dur, 1/16, // note time between successive note messages
+	\stretch, 4*60 / 108 //set the length of one bar to 4/4
+).play;
+)
 
 
-
+// the rest of the video talks about multi channel track in logic,
+// but garageband does not seem to work with it, and also we would need plugin to have a decent sound
 
 // *** utils ***
 
