@@ -8,6 +8,7 @@
 // enable MIDI Client
 // 1. in macos open "Audio MIDI Setup"
 // 2. Window -> Midi Studio -> Double click on "IAC Driver" -> check "Device is Online"
+"open -a 'Audio MIDI Setup'".unixCmd;
 
 // 3. reboot midi
 MIDIClient.init;
@@ -45,7 +46,7 @@ r.stop;
 CmdPeriod.add({(0..127).do{arg n; m.noteOff(0, n);};});
 // CmdPeriod.add({(0..100).do{arg n; m.control(0, n, 100);};});
 CmdPeriod.objects;
-CmdPeriod.remove(CmdPeriod.objects[2])
+CmdPeriod.remove(CmdPeriod.objects[2]);
 
 // *** CONTINUOUS CONTROLLER MSG ***
 
