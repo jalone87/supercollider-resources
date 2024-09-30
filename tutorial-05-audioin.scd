@@ -66,6 +66,11 @@ x = {
 }.play;
 )
 
+
+// Delay & Echo
+// - DelayN: non interpolating: fixed delay value
+// - DelayL: linear interpolating: non fixed, less cpu power
+// - DelayC: cubic interpolating: non fixed, more cpu power, more flexible
 (
 SynthDef.new(\bass, {
 	arg in=0, out=0, deltime=0.3, mix=(-0.5), decay=3, amp=1;
@@ -85,11 +90,6 @@ SynthDef.new(\bass, {
 
 x = Synth(\bass);
 x = Synth(\bass, [\deltime, 0.3, \mix, 0]);
-
-// Delay
-// - DelayN: non interpolating: fixed delay value
-// - DelayL: linear interpolating: non fixed, less cpu power
-// - DelayC: cubic interpolating: non fixed, more cpu power, more flexible
 
 
 
