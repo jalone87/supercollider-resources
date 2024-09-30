@@ -25,6 +25,9 @@ ServerQuit.removeAll;
 
 // 3. define piece-specific functions ---
 
+// automatically deactivate midi notes on CM+.
+CmdPeriod.add({(0..127).do{arg n; m.noteOff(0, n);};});
+
 // function to read sound buffers from a folder
 ~makeBuffers = {
 	b = Dictionary.new;
