@@ -41,18 +41,7 @@ s.plotTree;
 // param: hw index
 x = {SoundIn.ar(0)!2 }.play;
 
-// ring modulation: takes frequency components in the spectrum and shifts them around
-(
-x.free;
-x = {
-	var sig, rmod;
-	sig = SoundIn.ar(0!2);
-	rmod = sig * SinOsc.ar(700);
-	(sig + rmod) * 0.3;
-}.play;
-)
-
-
+// In
 // remember that in the bus first come the outputs [0,1] and then the inputs [2,(3)]
 (
 x = {
@@ -62,6 +51,45 @@ x = {
 }.play;
 )
 
+// SoundIn
+// ring modulation: takes frequency components in the spectrum and shifts them around
+// note: do not use AudioIn, it's deprecated.
+(
+x.free;
+x = {
+	var sig, rmod;
+	// better to use SoundIn than In since SoundIn automatically picks the In buffers
+	// to look at the source code CMD+I
+	sig = SoundIn.ar(0!2);
+	rmod = sig * SinOsc.ar(700);
+	(sig + rmod) * 0.3;
+}.play;
+)
+
+(
+SynthDef.new(\bass, {
+	arg in=0, out=0, deltime=0.3, mix=(-0.5), decay=3, amp=1;
+	var sig, delay;
+	sig = SoundIn.ar(in!2) * amp;
+	// DELAY
+	// params, signal, max delay time (how much memory allocated), actua delay (must be less than max)
+	// delay = DelayL.ar(sig, 0.5, deltime);
+	// ECHO
+	// to have an echo, we can use similarly CombL that feeds into itself
+	delay = CombL.ar(sig, 0.5, deltime, decay);
+	// XFade2 does an "equal power crossfade", a bit better than just summing the signals
+	sig = XFade2.ar(sig, delay, mix);
+	Out.ar(out, sig);
+}).add;
+)
+
+x = Synth(\bass);
+x = Synth(\bass, [\deltime, 0.3, \mix, 0]);
+
+// Delay
+// - DelayN: non interpolating: fixed delay value
+// - DelayL: linear interpolating: non fixed, less cpu power
+// - DelayC: cubic interpolating: non fixed, more cpu power, more flexible
 
 
 

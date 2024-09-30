@@ -149,3 +149,5 @@ s.meter;
 s.plotTree;
 
 s.quit;
+
+thisProcess.nowExecutingPath;
