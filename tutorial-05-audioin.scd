@@ -153,7 +153,38 @@ SynthDef.new(\delay, {
 ~delSynth = Synth(\delay, [\in, ~delBus, \out, ~out0], ~delGrp);
 )
 
+// REVERB + PITCH SHIFT
+// we can use multiple delays
+(
+~micGrp = Group.new;
+~delGrp = Group.after(~micGrp);
 
+// dry sound bypassing delay
+~micSynthDirect = Synth(\audioin, [\in, 0, \out, ~out0], ~micGrp);
+// this goes to processing
+~micSynthEffect = Synth(\audioin, [\in, 0, \out, ~delBus], ~micGrp);
+)
+(
+20.do({
+	Synth(\delay, [
+		\in, ~delBus,
+		\out, ~out0,
+		\mix, 1, // we already have a dry signal
+		\amp, 1/20,
+		\delHz, exprand(0.02, 0.08),
+		\delMin, exprand(0.05, 0.1),
+		\delMax, exprand(0.101, 0.2),
+		\decay, rrand(3.0, 6.0),
+	], ~delGrp);
+});
+)
+
+// - note: we hould use a low pass filter to avoid high pitches sss sounds
+
+// - note: we should use an envelope to more gently close the synth
+
+// - note: that DelayL family ugens allocates dinamically memory,
+//         going up with delays amount this will very quickly fill up the memsize of the server
 
 // *** utils ***
 
