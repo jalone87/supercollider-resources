@@ -1,4 +1,7 @@
 (
+s.quit;
+Window.closeAll;
+
 s = Server.local;
 
 ServerOptions.devices; // find the one you want and copy in the next lines
