@@ -145,6 +145,48 @@ s.waitForBoot({
 
 });
 
+
+
+// *** 7. GUI ***
+
+w = Window("Bass Effect", Rect(Window.screenBounds.width -500, 200, 440, 600), false)
+.front
+.alwaysOnTop_(true);
+
+w.view.decorator_(FlowLayout(w.bounds, 20@20, 10@10 ));
+
+~reverbLabel = StaticText(w, Rect(20, 50, 150, 30))
+.string_("Reverb")
+.font_(~font, 14)
+.align_(\left);
+
+
+~reverbButton = Button(w, Rect(340, 20, 80, 30))
+.states_([
+	["Disabled", Color.black, Color.gray(0.8)],
+	["Enabled", Color.black, ~accentColor]
+])
+.font_(~font, 18)
+.action_({
+	arg obj;
+	if (
+		obj.value == 1, // condition
+		{ // true
+			~delGrp.set(\amp, 1);
+//			x = Synth.new(\simplebpf, [
+//				\freq, ~slider.value.linexp(0, 1, 100, 4000),
+//				\rq, ~knob.value.linexp(0, 1, 1, 100)
+//			])
+//			.register;
+		},
+		{ // false
+			~delGrp.set(\amp, 0);
+		}
+	)
+})
+.value = 1;
+
+
 )
 
 // *** INIT ***
