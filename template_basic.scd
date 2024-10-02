@@ -150,6 +150,7 @@ s.boot;
 s.reboot;
 s.meter;
 s.plotTree;
+s.scope;
 
 s.quit;
 

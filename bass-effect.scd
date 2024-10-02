@@ -29,7 +29,11 @@ ServerQuit.removeAll;
 // 3. define piece-specific functions ---
 
 // automatically deactivate midi notes on CMD+.
-CmdPeriod.add({(0..127).do{arg n; m.noteOff(0, n);};});
+CmdPeriod.add({(0..127).do{arg n; if(m.isNil.not, m.noteOff(0, n));};});
+
+CmdPeriod.objects.remove(CmdPeriod.objects[2]);
+
+CmdPeriod.objects
 
 // function to read sound buffers from a folder
 ~makeBuffers = {
