@@ -30,7 +30,8 @@ s.waitForBoot({
 	s.meter;
 	s.plotTree;
 	s.scope;
-	FreqScope.new;
+	s.freqscope;
+	// FreqScope.new();
 
 	s.sync;
 

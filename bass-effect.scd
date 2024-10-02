@@ -25,15 +25,14 @@ ServerQuit.removeAll;
 ~out = 0;
 ~samplesPath = PathName(thisProcess.nowExecutingPath).parentPath++"samples/";
 
+~accentColor = Color(1, 0.5, 0);
+~font = Font("San Francisco");
+
 
 // 3. define piece-specific functions ---
 
 // automatically deactivate midi notes on CMD+.
-CmdPeriod.add({(0..127).do{arg n; if(m.isNil.not, m.noteOff(0, n));};});
-
-CmdPeriod.objects.remove(CmdPeriod.objects[2]);
-
-CmdPeriod.objects
+//CmdPeriod.add({(0..127).do{arg n; if(m.isNil.not, m.noteOff(0, n));};});
 
 // function to read sound buffers from a folder
 ~makeBuffers = {
@@ -75,7 +74,7 @@ CmdPeriod.objects
 		// effects
 		~micSynthEffect = Synth(\audioin, [\in, 0, \out, ~delBus], ~micGrp);
 
-		20.do({
+		6.do({
 			Synth(\delay, [
 				\in, ~delBus,
 				\out, ~out0,
@@ -144,6 +143,7 @@ s.waitForBoot({
 
 	s.meter;
 	s.plotTree;
+	s.scope;
 
 	"READY".postln;
 
@@ -160,6 +160,13 @@ w = Window("Bass Effect", Rect(Window.screenBounds.width -500, 200, 440, 600), f
 w.view.decorator_(FlowLayout(w.bounds, 20@20, 10@10 ));
 
 ~reverbLabel = StaticText(w, Rect(20, 50, 150, 30))
+.string_("BEWARE YOUR EARS !!!")
+.font_(~font, 20)
+.align_(\left);
+
+w.view.decorator.nextLine;
+
+~reverbLabel = StaticText(w, Rect(20, 50, 150, 30))
 .string_("Reverb")
 .font_(~font, 14)
 .align_(\left);
@@ -173,23 +180,43 @@ w.view.decorator_(FlowLayout(w.bounds, 20@20, 10@10 ));
 .font_(~font, 18)
 .action_({
 	arg obj;
-	if (
-		obj.value == 1, // condition
-		{ // true
-			~delGrp.set(\amp, 1);
+	~delGrp.set(\amp, obj.value);
+//	if (
+//		obj.value == 1, // condition
+//		{ // true
 //			x = Synth.new(\simplebpf, [
 //				\freq, ~slider.value.linexp(0, 1, 100, 4000),
 //				\rq, ~knob.value.linexp(0, 1, 1, 100)
 //			])
 //			.register;
-		},
-		{ // false
-			~delGrp.set(\amp, 0);
-		}
-	)
+//		},
+//		{ // false
+//			~delGrp.set(\amp, 0);
+//		}
+//	)
 })
-.value = 1;
+.valueAction_(0);
 
+~slider = Slider(w, Rect(20, 20, 150, 30))
+.background_(~accentColor)
+.action_({
+	arg obj;
+	~delGrp.set(\amp, obj.value);
+
+	if(obj.value > 0, {
+		~reverbButton.value = 1;
+	}, {
+		~reverbButton.value = 0;
+	})
+/*	var cf;
+	cf = obj.value.linexp(0, 1, 100, 4000).postln;
+	if (
+		x.isPlaying, // thanks to register (see Synth.register in button.active_ ) we can observe the node (synth) state
+		{ x.set(\freq, cf); } // here we change the synthdef. safely without errors thanks to the guard
+	);
+	// note it is not calling .valueAction_() not to have the slider and numBox actions call eachother infinitely
+	~numberBox.value_(obj.value.linexp(0, 1, 100, 4000));*/
+});
 
 )
 
