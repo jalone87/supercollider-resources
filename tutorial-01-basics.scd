@@ -22,7 +22,7 @@ number = 3.squared;
 {SinOsc.ar;};
 x = {SinOsc.ar;};
 
-// Function decclaration
+// Function declaration
 (
 z = {
 	// first the arguments
@@ -58,7 +58,7 @@ z.set(\freq, 330);
 
 {SinOsc.ar;}.play();
 
-// Stop it pressing COMAND + DOT
+// Stop it pressing COMMAND + DOT
 
 // create an Synth
 x = {SinOsc.ar;};
@@ -83,7 +83,7 @@ x = {SinOsc.ar(700, mul: 0.125)}.play();
 x = {SinOsc.ar(700) * 0.125}.play();
 
 
-// chain ugens
+// chaining ugens
 
 // note ar vs kr difference.
 // SuperCollider calculates audio in groups of samples, called blocks.

@@ -19,7 +19,6 @@ ServerBoot.removeAll;
 ServerTree.removeAll;
 ServerQuit.removeAll;
 
-
 // 2. initialize global vairables ----
 
 ~out = 0; // very useful when changing interfaces with multiple outputs
